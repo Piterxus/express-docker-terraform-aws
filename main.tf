@@ -50,7 +50,7 @@ resource "aws_instance" "app_server" {
             # Clonar el repositorio de GitHub
             cd /home/ec2-user
             git clone https://github.com/Piterxus/express-docker-terraform-aws.git
-            cd mi-app-tf
+            cd express-docker-terraform-aws
             
             # Construir y ejecutar el contenedor Docker
             docker build -t mi-aplicacion .
