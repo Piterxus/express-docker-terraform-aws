@@ -6,30 +6,24 @@ jobs:
   destroy:
     name: "Destroy AWS"
     runs-on: ubuntu-latest
+    env:
+      AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+      AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+      AWS_SESSION_TOKEN: ${{ secrets.AWS_SESSION_TOKEN }}
+      AWS_REGION: us-east-1
     steps:
-        - name: AWS Plan Copy
-          run: aws s3 cp s3://terraformdestroypedsanlan/terraform.tfstate terraform.tfstate
-          id: copy
-          env:
-            AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
-            AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-          
+      - name: AWS Plan Copy
+        run: aws s3 cp s3://terraformdestroypedsanlan/terraform.tfstate terraform.tfstate
+        id: copy
 
-        - name: Show Destroy plan
-          run: terraform plan -destroy
-          continue-on-error: true
+      - name: Show Destroy plan
+        run: terraform plan -destroy
+        continue-on-error: true
 
-        - name: Destroy resources jobs
-          id: destroy
-          run: terraform destroy -auto-approve
+      - name: Destroy resources jobs
+        id: destroy
+        run: terraform destroy -auto-approve
 
-        - name: Delete plan file
-          if: steps.destroy.outcome == 'success'
-          run: aws s3 rm s3://terraformdestroypedsanlan${{ github.event.inputs.env }}.tfstate
-          env:
-            AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
-            AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-            aws-region: us-east-1
-        
-        
-        
+      - name: Delete plan file
+        if: steps.destroy.outcome == 'success'
+        run: aws s3 rm s3://terraformdestroypedsanlan${{ github.event.inputs.env }}.tfstate
