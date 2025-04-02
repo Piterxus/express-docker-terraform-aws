@@ -1,4 +1,4 @@
-name: Manually triggered workflow
+name: Destroy Terraform to AWS
 on:
   workflow_dispatch:
     inputs:
