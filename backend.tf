@@ -1,7 +1,7 @@
 terraform {
   backend "s3" {
-    bucket = "mybucket"
-    key    = "path/to/my/key"
+    bucket = "terraformdestroypedsanlan"
+    key    = "key"
     region = "us-east-1"
   }
 }

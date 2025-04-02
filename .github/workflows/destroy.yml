@@ -19,3 +19,12 @@ jobs:
         aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
         aws-session-token: ${{ secrets.AWS_SESSION_TOKEN }}
         aws-region: us-east-1
+
+    - name: Instalar Terraform
+      uses: hashicorp/setup-terraform@v2
+
+    - name: Inicializar Terraform
+      run: terraform init
+
+    - name: Aplicar Terraform
+      run: terraform destroy -auto-approve 
