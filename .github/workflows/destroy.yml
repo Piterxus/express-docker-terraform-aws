@@ -32,4 +32,4 @@ jobs:
 
       - name: Delete plan file
         if: steps.destroy.outcome == 'success'
-        run: aws s3 rm s3://terraformdestroypedsanlan${{ github.event.inputs.env }}.tfstate
+        run: aws s3 cp s3://terraformdestroypedsanlan/terraform.tfstate terraform.tfstate
