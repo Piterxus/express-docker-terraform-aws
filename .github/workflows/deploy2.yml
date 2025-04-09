@@ -1,0 +1,105 @@
+name: "Terraform"
+
+on:
+  workflow_dispatch:
+    inputs:
+      # Terraform action you want to perform
+      action:
+        description: 'Terraform Action to Perform'
+        type: choice
+        options:
+        - Terraform_apply
+        - Terraform_destroy
+
+jobs:
+  terraform_apply:
+    name: "Terraform_apply"
+    if: ${{ github.event.inputs.action == 'Terraform_apply' }}
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v3
+
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@v1
+
+      - name: Configurar AWS CLI
+    
+        uses: aws-actions/configure-aws-credentials@v3
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-session-token: ${{ secrets.AWS_SESSION_TOKEN}}
+          aws-region: us-east-1
+  
+      - name: Instalar Terraform
+        uses: hashicorp/setup-terraform@v2
+  
+      - name: Inicializar Terraform
+        run: terraform init
+  
+      - name: Aplicar Terraform
+        run: terraform apply -auto-approve
+      
+      - name: AWS Plan Copy
+        id: copyfrom
+        run: aws s3 cp s3://terraformdestroypedsanlan/terraform.tfstate 
+        env:
+          AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          AWS_DEFAULT_REGION: us-east-1
+        continue-on-error: true
+              
+  terraform_destroy:
+    name: "Terraform_destroy"
+    if: ${{ github.event.inputs.action == 'Terraform_destroy' }}
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v3
+        
+      - name: Configurar AWS CLI
+    
+        uses: aws-actions/configure-aws-credentials@v3
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-session-token: ${{ secrets.AWS_SESSION_TOKEN}}
+          aws-region: us-east-1
+
+      - name: Instalar Terraform
+        uses: hashicorp/setup-terraform@v2
+    
+      - name: Inicializar Terraform
+        run: terraform init
+
+      - name: Ver proveedores
+        run: terraform providers
+
+      - name: AWS Plan Copy
+        id: copyfrom
+        run: aws s3 cp s3://terraformdestroypedsanlan/terraform.tfstate terraform.tfstate
+        env:
+          AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          AWS_DEFAULT_REGION: us-east-1
+        continue-on-error: true
+
+      - name: Show Destroy plan
+        run: terraform plan -destroy
+        continue-on-error: true
+
+      - name: Destroy resources jobs
+        id: destroy
+        run: terraform destroy -auto-approve
+      
+      - name: Delete plan file
+        if: steps.destroy.outcome == 'success'
+        run: aws s3 rm s3://terraformdestroypedsanlan/terraform.tfstate 
+        env:
+          AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          AWS_DEFAULT_REGION: us-east-1
+            

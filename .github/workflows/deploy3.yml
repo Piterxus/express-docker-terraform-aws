@@ -1,0 +1,86 @@
+name: "Terraform composite"
+
+on:
+  workflow_dispatch:
+    inputs:
+      # Terraform action you want to perform
+      action:
+        description: 'Terraform Action to Perform'
+        type: choice
+        options:
+        - Terraform_apply
+        - Terraform_destroy
+
+jobs:
+  terraform_apply:
+    name: "Terraform_apply"
+    if: ${{ github.event.inputs.action == 'Terraform_apply' }}
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v3
+
+      - name: entorno
+        uses: ./
+        with:
+          aws_access_key_id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws_secret_access_key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws_session_token: ${{ secrets.AWS_SESSION_TOKEN }}
+  
+      - name: Aplicar Terraform
+        run: terraform apply -auto-approve
+      
+      - name: AWS Plan Copy
+        id: copyfrom
+        run: aws s3 cp ts3://terraformdestroypedsanlan/terraform.tfstate 
+        env:
+          AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          AWS_DEFAULT_REGION: us-east-1
+        continue-on-error: true
+              
+  terraform_destroy:
+    name: "Terraform_destroy"
+    if: ${{ github.event.inputs.action == 'Terraform_destroy' }}
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v3
+        
+      - name: entorno
+        uses: ./
+        with:
+          aws_access_key_id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws_secret_access_key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws_session_token: ${{ secrets.AWS_SESSION_TOKEN }}
+
+      - name: Ver proveedores
+        run: terraform providers
+
+      - name: AWS Plan Copy
+        id: copyfrom
+        run: aws s3 cp s3://terraformdestroypedsanlan/terraform.tfstate 
+        env:
+          AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          AWS_DEFAULT_REGION: us-east-1
+        continue-on-error: true
+
+      - name: Show Destroy plan
+        run: terraform plan -destroy
+        continue-on-error: true
+
+      - name: Destroy resources jobs
+        id: destroy
+        run: terraform destroy -auto-approve
+      
+      - name: Delete plan file
+        if: steps.destroy.outcome == 'success'
+        run: aws s3 rm s3://terraformdestroypedsanlan/terraform.tfstate 
+        env:
+          AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          AWS_DEFAULT_REGION: us-east-1
+            

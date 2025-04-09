@@ -1,0 +1,28 @@
+name: "Setup Environment"
+description: "Configura el entorno de trabajo"
+inputs:
+  aws_access_key_id:
+    description: "AWS Access Key"
+    required: true
+  aws_secret_access_key:
+    description: "AWS Secret Key"
+    required: true
+  aws_session_token:
+    description: "AWS Session Token"
+    required: true
+
+runs:
+  using: "composite"
+  steps:
+    - name: Configurar AWS CLI
+      uses: aws-actions/configure-aws-credentials@v3
+      with:
+        aws-access-key-id: ${{ inputs.AWS_ACCESS_KEY_ID }}
+        aws-secret-access-key: ${{ inputs.AWS_SECRET_ACCESS_KEY }}
+        aws-session-token: ${{ inputs.AWS_SESSION_TOKEN}}
+        aws-region: us-east-1
+    - name: Instalar Terraform
+      uses: hashicorp/setup-terraform@v2
+    - name: Inicializar Terraform
+      run: terraform init
+      shell: bash
