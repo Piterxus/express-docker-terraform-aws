@@ -1,4 +1,5 @@
 name: Destroy Terraform to AWS
+
 on:
   workflow_dispatch:
 
@@ -11,25 +12,29 @@ jobs:
       AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
       AWS_SESSION_TOKEN: ${{ secrets.AWS_SESSION_TOKEN }}
       AWS_REGION: us-east-1
+
     steps:
-      - name: AWS Plan Copy
+      - name: Checkout repo
+        uses: actions/checkout@v3
+
+      - name: Descargar tfstate desde S3
         run: aws s3 cp s3://terraformdestroypedsanlan/terraform.tfstate terraform.tfstate
-        id: copy
 
       - name: Instalar Terraform
         uses: hashicorp/setup-terraform@v2
-
-      - name: Show Destroy plan
-        run: terraform plan -destroy
-        continue-on-error: true
+        with:
+          terraform_version: 1.5.7 # Cambia la versión si necesitas otra
 
       - name: Inicializar Terraform
         run: terraform init
 
-      - name: Destroy resources jobs
+      - name: Mostrar plan de destrucción
+        run: terraform plan -destroy
+
+      - name: Destruir recursos
         id: destroy
         run: terraform destroy -auto-approve
 
-      - name: Delete plan file
+      - name: Subir tfstate actualizado a S3 (opcional)
         if: steps.destroy.outcome == 'success'
-        run: aws s3 cp s3://terraformdestroypedsanlan/terraform.tfstate terraform.tfstate
+        run: aws s3 cp terraform.tfstate s3://terraformdestroypedsanlan/terraform.tfstate
