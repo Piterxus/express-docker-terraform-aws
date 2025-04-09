@@ -2,6 +2,15 @@ provider "aws" {
   region = "us-east-1"  # Cambia la región según tu necesidad
 }
 
+terraform {
+  required_providers {
+    aws = {
+      source  = "hashicorp/aws"
+      version = "~> 5.0" # o la versión que desees usar
+    }
+  }
+}
+
 resource "aws_security_group" "app_sg" {
   name        = "app-security-group"
   description = "Permite trafico HTTP y SSH"
